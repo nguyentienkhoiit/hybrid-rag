@@ -1,0 +1,87 @@
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    container_name: hybridrag-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+
+      # Tune for local dev
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+
+      # ✅ CORS for Elasticvue (http://localhost:8081)
+      - http.cors.enabled=true
+      - http.cors.allow-origin=http://localhost:8081
+      - http.cors.allow-headers=X-Requested-With,Content-Type,Content-Length,Authorization
+      - http.cors.allow-methods=OPTIONS,HEAD,GET,POST,PUT,DELETE
+    ports:
+      - "9200:9200"
+    volumes:
+      - ./data/elasticsearch:/usr/share/elasticsearch/data
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9200/_cluster/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks:
+      - hybridrag-net
+
+  elasticvue:
+    image: cars10/elasticvue:latest
+    container_name: hybridrag-elasticvue
+    ports:
+      - "8081:8080"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - hybridrag-net
+
+#  postgres:
+#    image: postgres:16
+#    container_name: hybridrag-postgres
+#    environment:
+#      - POSTGRES_DB=hybridrag
+#      - POSTGRES_USER=hybridrag
+#      - POSTGRES_PASSWORD=hybridrag
+#    ports:
+#      - "5432:5432"
+#    volumes:
+#      - ./data/postgres:/var/lib/postgresql/data
+#    healthcheck:
+#      test: ["CMD-SHELL", "pg_isready -U hybridrag -d hybridrag >/dev/null || exit 1"]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 30
+#    networks:
+#      - hybridrag-net
+
+  postgres:
+    # ✅ dùng image có sẵn pgvector (fix lỗi $libdir/vector)
+    image: pgvector/pgvector:pg16
+    container_name: hybridrag-postgres
+    environment:
+      - POSTGRES_DB=hybridrag
+      - POSTGRES_USER=hybridrag
+      - POSTGRES_PASSWORD=hybridrag
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+      # ✅ chạy init.sql khi DB được tạo lần đầu
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U hybridrag -d hybridrag >/dev/null || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks:
+      - hybridrag-net
+
+networks:
+  hybridrag-net:
+    driver: bridge

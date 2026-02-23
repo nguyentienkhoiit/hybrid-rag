@@ -1,0 +1,77 @@
+server:
+  port: ${SERVER_PORT:8080}
+  tomcat:
+    max-swallow-size: -1   # cho phép swallow request lớn (Tomcat)
+
+spring:
+  application:
+    name: hybrid-rag
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:${POSTGRES_PORT:5432}/${POSTGRES_DB:hybridrag}}
+    username: ${SPRING_DATASOURCE_USERNAME:${POSTGRES_USER:hybridrag}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${POSTGRES_PASSWORD:hybridrag}}
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX:10}
+      minimum-idle: ${DB_POOL_MIN:2}
+      connection-timeout: ${DB_POOL_CONN_TIMEOUT_MS:2000}
+      validation-timeout: ${DB_POOL_VALID_TIMEOUT_MS:1000}
+      idle-timeout: ${DB_POOL_IDLE_TIMEOUT_MS:300000}
+      max-lifetime: ${DB_POOL_MAX_LIFETIME_MS:1800000}
+
+  ai:
+    ollama:
+      base-url: ${OLLAMA_BASE_URL:http://localhost:${OLLAMA_PORT:11434}}
+      embedding:
+        model: ${OLLAMA_EMBEDDING_MODEL:nomic-embed-text}
+
+logging:
+  level:
+    root: INFO
+    com.example.hybridrag: INFO
+
+hybridrag:
+  elasticsearch:
+    url: ${ELASTIC_URL:http://localhost:${ELASTIC_PORT:9200}}
+    index: ${ELASTIC_INDEX:rag_chunks}
+    connect-timeout-ms: ${ELASTIC_CONNECT_TIMEOUT_MS:1000}
+    socket-timeout-ms: ${ELASTIC_SOCKET_TIMEOUT_MS:3000}
+
+  pgvector:
+    schema: ${PGVECTOR_SCHEMA:public}
+    table: ${PGVECTOR_TABLE:rag_chunks}
+    dimensions: ${PGVECTOR_DIMENSIONS:768}
+    initialize-schema: ${PGVECTOR_INIT_SCHEMA:false}
+    max-batch-size: ${PGVECTOR_MAX_BATCH_SIZE:200}
+
+  rag:
+    chunk:
+      tokens: ${RAG_CHUNK_TOKENS:320}
+      overlap: ${RAG_CHUNK_OVERLAP:64}
+      min-chars: ${RAG_CHUNK_MIN_CHARS:200}
+
+    retrieve:
+      topK: ${RAG_TOPK:12}
+      alpha: ${RAG_ALPHA:0.6}     # 0..1 (vector weight); bm25 weight = 1-alpha
+      mmr:
+        lambda: ${RAG_MMR_LAMBDA:0.7}  # 0..1 (relevance vs diversity)
+        k: ${RAG_MMR_K:8}
+
+    context:
+      max-chars: ${RAG_CONTEXT_MAX_CHARS:8000}
+      max-chunks: ${RAG_CONTEXT_MAX_CHUNKS:8}
+
+  deepseek:
+    base-url: ${DEEPSEEK_BASE_URL:https://api.deepseek.com}
+    api-key: ${DEEPSEEK_API_KEY:sk-85ba0822938c47e19742798e570400b5}
+    model: ${DEEPSEEK_MODEL:deepseek-chat}
+    temperature: ${DEEPSEEK_TEMPERATURE:0.2}
+    max-tokens: ${DEEPSEEK_MAX_TOKENS:600}
+    connect-timeout-ms: ${DEEPSEEK_CONNECT_TIMEOUT_MS:1500}
+    read-timeout-ms: ${DEEPSEEK_READ_TIMEOUT_MS:12000}
+    retries: ${DEEPSEEK_RETRIES:2}

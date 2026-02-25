@@ -71,7 +71,7 @@ hybridrag:
     api-key: ${DEEPSEEK_API_KEY:sk-85ba0822938c47e19742798e570400b5}
     model: ${DEEPSEEK_MODEL:deepseek-chat}
     temperature: ${DEEPSEEK_TEMPERATURE:0.2}
-    max-tokens: ${DEEPSEEK_MAX_TOKENS:600}
+    max-tokens: ${DEEPSEEK_MAX_TOKENS:5000}
     connect-timeout-ms: ${DEEPSEEK_CONNECT_TIMEOUT_MS:1500}
     read-timeout-ms: ${DEEPSEEK_READ_TIMEOUT_MS:12000}
     retries: ${DEEPSEEK_RETRIES:2}

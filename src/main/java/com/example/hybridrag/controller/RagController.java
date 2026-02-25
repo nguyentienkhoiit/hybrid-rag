@@ -1,10 +1,16 @@
 package com.example.hybridrag.controller;
 
 import com.example.hybridrag.application.service.RagApplicationService;
+import com.example.hybridrag.domain.dto.ExamDraftRequest;
+import com.example.hybridrag.domain.dto.ExamDraftResponse;
+import com.example.hybridrag.domain.dto.ResponseData;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
@@ -32,10 +38,10 @@ public class RagController {
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ResponseEntity<Map<String, Object>> ask(
-            @RequestPart("topic") String topic,
+    public ResponseEntity<ResponseData<ExamDraftResponse>> ask(
+            @RequestPart("prompt") String topic,
             @RequestPart("file") MultipartFile file
-    ) {
+    ) throws JsonProcessingException {
         if (!StringUtils.hasText(topic)) {
             throw new IllegalArgumentException("topic is required");
         }
@@ -46,11 +52,16 @@ public class RagController {
             throw new IllegalArgumentException("Only PDF uploads are supported");
         }
 
-        RagApplicationService.AskResult result = ragApplicationService.ask(topic, file);
-        return ResponseEntity.ok(Map.of(
-                "fileId", result.fileId(),
-                "answer", result.answer()
-        ));
+        ObjectMapper objectMapper = new ObjectMapper();
+        ExamDraftRequest request = objectMapper.readValue(topic, ExamDraftRequest.class);
+
+        ResponseData<ExamDraftResponse> response = ResponseData.<ExamDraftResponse>builder()
+                .status(HttpStatus.CREATED.value())
+                .message("Create user successfully")
+                .data(ragApplicationService.ask(request, file))
+                .build();
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @ExceptionHandler(Exception.class)

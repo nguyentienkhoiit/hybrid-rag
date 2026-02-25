@@ -1,5 +1,6 @@
 package com.example.hybridrag.infrastructure.ingest;
 
+import com.example.hybridrag.domain.dto.ExamDraftRequest;
 import com.example.hybridrag.infrastructure.search.ElasticsearchService;
 import java.io.IOException;
 import java.io.InputStream;
@@ -44,7 +45,7 @@ public class IngestService {
      * Offline ingest pipeline (performed synchronously per request here):
      * PDF -> token chunking -> embeddings (Ollama) -> pgvector (PgVectorStore) -> raw text -> Elasticsearch bulk (BM25)
      */
-    public IngestResult ingest(String topic, MultipartFile pdf) {
+    public IngestResult ingest(ExamDraftRequest request, MultipartFile pdf) {
         String fileId = UUID.randomUUID().toString();
 
         String extracted;
@@ -69,7 +70,7 @@ public class IngestService {
 
             Map<String, Object> md = new HashMap<>();
             md.put("fileId", fileId);
-            md.put("topic", topic);
+            md.put("topic", request.getTopic());
             md.put("chunkIndex", i);
             md.put("source", pdf.getOriginalFilename() == null ? "upload.pdf" : pdf.getOriginalFilename());
             md.put("createdAt", now.toString());
